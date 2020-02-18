@@ -1,7 +1,7 @@
 # STSP
-A Nengo Implementation of Short-term Synaptic Plasticity (STSP) as proposed by Mongillo, Barak and Tsodyks (2008)
+A Nengo Implementation of Short-term Synaptic Plasticity (STSP) as proposed by Mongillo, Barak and Tsodyks (2008). Based on the work by Matthijs Pals.
 ## How to use it
-In order to import the necessary classes/functions use: 
+In order to import the necessary classes/functions use:
 
 ```from stp_ocl_implementation import *```
 
@@ -23,7 +23,7 @@ The following additional probes can be used:
 ```nengo.Probe(ensemble.neurons, 'resources')  ```   
 
 ## Example models/simulations
-The implementation of STSP was used to create a functional spiking neuron model of working memory: https://www.biorxiv.org/content/10.1101/823559v2. Using this mechanism, the model is able to maintain information in activity-silent states. This model was used to simulate three working memory tasks (the Model_sim_exp.py files), earlier performed by human participants (Wolff et al. 2017). Both the model's behavior as well as its neural representations are in agreement with the human data. 
+The implementation of STSP was used to create a functional spiking neuron model of working memory: https://www.biorxiv.org/content/10.1101/823559v2. Using this mechanism, the model is able to maintain information in activity-silent states. This model was used to simulate three working memory tasks (the Model_sim_exp.py files), earlier performed by human participants (Wolff et al. 2017). Both the model's behavior as well as its neural representations are in agreement with the human data.
 
 ## Theoretical background
 Synaptic efficiency is based on two parameters: the amount of available resources to the presynaptic neuron (x, normalised to be between 0 and 1) and the fraction of resources used each time a neuron fires (u), reflecting the residual presynaptic calcium level.
@@ -32,9 +32,9 @@ For all LIF neurons to which we want to apply STSP, every simulation time step u
 
 𝑑𝑥/𝑑𝑡= (1−𝑥)/𝜏_𝐷 − 𝑢 𝑥 𝛿(𝑡−𝑡_𝑠𝑝) (2.1)
 
-𝑑𝑢/𝑑𝑡= (𝑈−𝑢)/𝜏_𝐹 − 𝑈 (1−𝑢) 𝛿(𝑡−𝑡_𝑠𝑝) (2.2) 
+𝑑𝑢/𝑑𝑡= (𝑈−𝑢)/𝜏_𝐹 − 𝑈 (1−𝑢) 𝛿(𝑡−𝑡_𝑠𝑝) (2.2)
 
-Where x represents the available resources, u represents the residual calcium level and U its baseline level, 𝜏_𝐹 is the facilitating time constant and 𝜏_𝐷 the depressing time constant, 𝛿 represents the Dirac delta function, t the simulation time and t_sp the time of a presynaptic spike. 
+Where x represents the available resources, u represents the residual calcium level and U its baseline level, 𝜏_𝐹 is the facilitating time constant and 𝜏_𝐷 the depressing time constant, 𝛿 represents the Dirac delta function, t the simulation time and t_sp the time of a presynaptic spike.
 
 Outgoing connection weights of neurons implementing STSP are determined by both their initial connection weight and their current synaptic efficiency. Initial connections weights are calculated by the NEF, while synaptic efficiency is set to the product of the current value of u and x of the presynaptic neuron, normalised by their baseline value (equation 2.3). This results in a system where after a neuron fires its outgoing connections will be depressed on the time scale of 𝜏_𝐷 and facilitated on the timescale of 𝜏_𝐹.
 
@@ -46,4 +46,3 @@ Where 𝑤_𝑖𝑗 represents the connection weight between neuron i and j and 
 Mongillo G, Barak O, Tsodyks M. Synaptic Theory of Working Memory. Science. 2008;319: 1543–1546. doi:10.1126/science.1150769
 
 Wolff MJ, Jochim J, Akyürek EG, Stokes MG. Dynamic hidden states underlying working-memory-guided behavior. Nat Neuroscience. 2017;20: 864–871. doi:10.1038/nn.4546
-
