@@ -1,6 +1,6 @@
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt   
+import matplotlib.pyplot as plt
 from nengo.dists import Uniform
 import nengo
 import math
@@ -26,9 +26,9 @@ sim_no="1"      #simulation number (used in the names of the outputfiles)
 
 
 #set this if you are using nengo OCL
-platform = cl.get_platforms()[0]   #select platform, should be 0
-device=platform.get_devices()[1]   #select GPU, use 0 (Nvidia 1) or 1 (Nvidia 3)
-context=cl.Context([device])
+# platform = cl.get_platforms()[0]   #select platform, should be 0
+# device=platform.get_devices()[1]   #select GPU, use 0 (Nvidia 1) or 1 (Nvidia 3)
+# context=cl.Context([device])
 
 
 
@@ -41,10 +41,10 @@ Nd = 1000 #number of neurons in decision
 
 
 #LOAD INPUT STIMULI (images created using the psychopy package)
-#(Stimuli should be in a subfolder named 'Stimuli') 
+#(Stimuli should be in a subfolder named 'Stimuli')
 
 #width and height of images
-diameter=col=row=128 
+diameter=col=row=128
 
 #load grating stimuli
 angles=np.arange(-90,90,1)  #rotation
@@ -59,18 +59,18 @@ except FileNotFoundError: #or generate
             name="Stimuli/stim"+str(angle)+"_"+str(round(phase,1))+".png"
             img=Image.open(name)
             img=np.array(img.convert('L'))
-            imagearr=np.vstack((imagearr,img.ravel())) 
-    
-    #also load the  bull's eye 'impulse stimulus'  
+            imagearr=np.vstack((imagearr,img.ravel()))
+
+    #also load the  bull's eye 'impulse stimulus'
     name="Stimuli/stim999.png"
     img=Image.open(name)
     img=np.array(img.convert('L'))
-    imagearr=np.vstack((imagearr,img.ravel())) 
-    
+    imagearr=np.vstack((imagearr,img.ravel()))
+
     #normalize to be between -1 and 1
     imagearr=imagearr/255
     imagearr=2 * imagearr - 1
-    
+
     #imagearr is a (1801, 16384) np array containing all stimuli + the impulse
     np.save('Stimuli/all_stims.npy',imagearr)
 
@@ -80,13 +80,13 @@ except FileNotFoundError: #or generate
 
 #set default input
 memory_item_cued = 0
-probe_cued = 0 
+probe_cued = 0
 memory_item_uncued = 0
-probe_uncued = 0 
+probe_uncued = 0
 
 #input stimuli
 #250 ms memory items | 0-250
-#800 ms fixation | 250-1050 
+#800 ms fixation | 250-1050
 #20 ms reactivation | 1050-1070
 #1080 ms fixation | 1070-2150
 #100 ms impulse | 2150-2250
@@ -112,7 +112,7 @@ def input_func_uncued(t):
     else:
         return np.zeros(128*128) #blank screen
 
-#reactivate memory cued ensemble with nonspecific signal        
+#reactivate memory cued ensemble with nonspecific signal
 def reactivate_func(t):
     if t>1.050 and t<1.070:
         return np.ones(Nm)*0.0200
@@ -120,7 +120,7 @@ def reactivate_func(t):
         return np.zeros(Nm)
 
 #Create matrix of sine and cosine values associated with the stimuli
-#so that we can later specify a transform from stimuli to rotation        
+#so that we can later specify a transform from stimuli to rotation
 Fa = np.tile(angles,phases.size) #want to do this for each phase
 Frad = (Fa/90) * math.pi #make radians
 Sin = np.sin(Frad)
@@ -176,15 +176,15 @@ def generate_gabors():
 
         #cued module
         #for each neuron in the sensory layer, generate a Gabor of 1/3 of the image size
-        gabors_cued = Gabor().generate(Ns, (col/3, row/3)) 
+        gabors_cued = Gabor().generate(Ns, (int(col/3), int(row/3)))
         #put gabors on image and make them the same shape as the stimuli
         gabors_cued = Mask((col, row)).populate(gabors_cued, flatten=True).reshape(Ns, -1)
         #normalize
         gabors_cued=gabors_cued/abs(max(np.amax(gabors_cued),abs(np.amin(gabors_cued))))
         #gabors are added to imagearr for SVD
-        x_cued=np.vstack((imagearr,gabors_cued))    
+        x_cued=np.vstack((imagearr,gabors_cued))
 
-        #SVD  
+        #SVD
         print("SVD cued started...")
         U_cued, S_cued, V_cued = np.linalg.svd(x_cued.T)
         print("SVD cued done")
@@ -209,15 +209,15 @@ def generate_gabors():
             gabors_uncued = Gabor().generate(Ns, (col/3, row/3))#.reshape(N, -1)
             gabors_uncued = Mask((col, row)).populate(gabors_uncued, flatten=True).reshape(Ns, -1)
             gabors_uncued=gabors_uncued/abs(max(np.amax(gabors_uncued),abs(np.amin(gabors_uncued))))
-            x_uncued=np.vstack((imagearr,gabors_uncued))    
+            x_uncued=np.vstack((imagearr,gabors_uncued))
 
             print("SVD uncued started...")
             U_uncued, S_uncued, V_uncued = np.linalg.svd(x_uncued.T)
             print("SVD uncued done")
-            e_uncued = np.dot(gabors_uncued, U_uncued[:,:D]) 
+            e_uncued = np.dot(gabors_uncued, U_uncued[:,:D])
             compressed_im_uncued=np.dot(imagearr[:1800,:]/100, U_uncued[:,:D])
             compressed_im_uncued = np.vstack((compressed_im_uncued, np.dot(imagearr[-1,:]/50, U_uncued[:,:D])))
-            
+
             np.savez('Stimuli/gabors_svd_uncued.npz', e_uncued=e_uncued, U_uncued=U_uncued, compressed_im_uncued=compressed_im_uncued)
 
 
@@ -226,7 +226,7 @@ nengo_gui_on = __name__ == 'builtins' #python3
 def create_model(seed=None):
 
     global model
-    
+
     #create vocabulary to show representations in gui
     if nengo_gui_on:
         vocab_angles = spa.Vocabulary(D)
@@ -243,34 +243,34 @@ def create_model(seed=None):
         if nrm > 0:
             v /= nrm
         vocab_angles.add('Impulse', v)
-    
+
     #model = nengo.Network(seed=seed)
     model = spa.SPA(seed=seed)
     with model:
 
         #input nodes
-        inputNode_cued=nengo.Node(input_func_cued,label='input_cued')     
-        reactivate=nengo.Node(reactivate_func,label='reactivate') 
-    
+        inputNode_cued=nengo.Node(input_func_cued,label='input_cued')
+        reactivate=nengo.Node(reactivate_func,label='reactivate')
+
         #sensory ensemble
         sensory_cued = nengo.Ensemble(Ns, D, encoders=e_cued, intercepts=Uniform(0.01, .1),radius=1,label='sensory_cued')
         nengo.Connection(inputNode_cued,sensory_cued,transform=U_cued[:,:D].T)
-        
+
         #memory ensemble
-        memory_cued = nengo.Ensemble(Nm, D,neuron_type=stpLIF(), intercepts=Uniform(0.01, .1),radius=1,label='memory_cued') 
+        memory_cued = nengo.Ensemble(Nm, D,neuron_type=stpLIF(), intercepts=Uniform(0.01, .1),radius=1,label='memory_cued')
         nengo.Connection(reactivate,memory_cued.neurons) #potential reactivation
         nengo.Connection(sensory_cued, memory_cued, transform=.1) #.1)
-        
+
         #recurrent STSP connection
         nengo.Connection(memory_cued, memory_cued,transform=1, learning_rule_type=STP(), solver=nengo.solvers.LstsqL2(weights=True))
 
         #comparison represents sin, cosine of theta of both sensory and memory ensemble
-        comparison_cued = nengo.Ensemble(Nc, dimensions=4,radius=math.sqrt(2),intercepts=Uniform(.01, 1),label='comparison_cued') 
+        comparison_cued = nengo.Ensemble(Nc, dimensions=4,radius=math.sqrt(2),intercepts=Uniform(.01, 1),label='comparison_cued')
         nengo.Connection(sensory_cued, comparison_cued[:2],eval_points=compressed_im_cued[0:-1],function=sincos.T)
         nengo.Connection(memory_cued, comparison_cued[2:],eval_points=compressed_im_cued[0:-1],function=sincos.T)
-       
+
         #decision represents the difference in theta decoded from the sensory and memory ensembles
-        decision_cued = nengo.Ensemble(n_neurons=Nd,  dimensions=1,radius=45,label='decision_cued') 
+        decision_cued = nengo.Ensemble(n_neurons=Nd,  dimensions=1,radius=45,label='decision_cued')
         nengo.Connection(comparison_cued, decision_cued, eval_points=ep, scale_eval_points=False, function=arctan_func)
 
         #same for uncued
@@ -279,52 +279,52 @@ def create_model(seed=None):
 
             sensory_uncued = nengo.Ensemble(Ns, D, encoders=e_uncued, intercepts=Uniform(0.01, .1),radius=1,label='sensory_uncued')
             nengo.Connection(inputNode_uncued,sensory_uncued,transform=U_uncued[:,:D].T)
-            
+
             memory_uncued = nengo.Ensemble(Nm, D,neuron_type=stpLIF(), intercepts=Uniform(0.01, .1),radius=1,label='memory_uncued')
             nengo.Connection(sensory_uncued, memory_uncued, transform=.1)
-   
+
             nengo.Connection(memory_uncued, memory_uncued,transform=1,learning_rule_type=STP(),solver=nengo.solvers.LstsqL2(weights=True))
-    
+
             comparison_uncued = nengo.Ensemble(Nd, dimensions=4,radius=math.sqrt(2),intercepts=Uniform(.01, 1),label='comparison_uncued')
-    
+
             nengo.Connection(memory_uncued, comparison_uncued[2:],eval_points=compressed_im_uncued[0:-1],function=sincos.T)
             nengo.Connection(sensory_uncued, comparison_uncued[:2],eval_points=compressed_im_uncued[0:-1],function=sincos.T)
-            
-            decision_uncued = nengo.Ensemble(n_neurons=Nd,  dimensions=1,radius=45,label='decision_uncued') 
+
+            decision_uncued = nengo.Ensemble(n_neurons=Nd,  dimensions=1,radius=45,label='decision_uncued')
             nengo.Connection(comparison_uncued, decision_uncued, eval_points=ep, scale_eval_points=False, function=arctan_func)
-     
+
         #decode for gui
         if nengo_gui_on:
             model.sensory_decode = spa.State(D, vocab=vocab_angles, subdimensions=12, label='sensory_decode')
             for ens in model.sensory_decode.all_ensembles:
                 ens.neuron_type = nengo.Direct()
             nengo.Connection(sensory_cued, model.sensory_decode.input,synapse=None)
-     
+
             model.memory_decode = spa.State(D, vocab=vocab_angles, subdimensions=12, label='memory_decode')
             for ens in model.memory_decode.all_ensembles:
                 ens.neuron_type = nengo.Direct()
             nengo.Connection(memory_cued, model.memory_decode.input,synapse=None)
-            
+
         #probes
         if not(nengo_gui_on):
             if store_representations: #sim 1 trials 1-100
                 #p_dtheta_cued=nengo.Probe(decision_cued, synapse=0.01)
                 model.p_mem_cued=nengo.Probe(memory_cued, synapse=0.01)
                 #p_sen_cued=nengo.Probe(sensory_cued, synapse=0.01)
-           
+
                 if uncued:
                     model.p_mem_uncued=nengo.Probe(memory_uncued, synapse=0.01)
-                
+
             if store_spikes_and_resources: #sim 1 trial 1
                 model.p_spikes_mem_cued=nengo.Probe(memory_cued.neurons, 'spikes')
                 model.p_res_cued=nengo.Probe(memory_cued.neurons, 'resources')
                 model.p_cal_cued=nengo.Probe(memory_cued.neurons, 'calcium')
-    
+
                 if uncued:
                     model.p_spikes_mem_uncued=nengo.Probe(memory_uncued.neurons, 'spikes')
                     model.p_res_uncued=nengo.Probe(memory_uncued.neurons, 'resources')
                     model.p_cal_uncued=nengo.Probe(memory_uncued.neurons, 'calcium')
-            
+
             if store_decisions: #sim 2
                 model.p_dec_cued=nengo.Probe(decision_cued, synapse=0.01)
 
@@ -340,7 +340,7 @@ def plot_sim_1(sp_c,sp_u,res_c,res_u,cal_c,cal_u, mem_cued, mem_uncued):
     #FIGURE 31
     with plt.rc_context():
         plt.rcParams.update(theme.rcParams)
-    
+
         fig, axes, = plt.subplots(2,2,squeeze=True)
         theme.setup_figure(fig)
         t = sim.trange()
@@ -415,17 +415,17 @@ def plot_sim_1(sp_c,sp_u,res_c,res_u,cal_c,cal_u, mem_cued, mem_uncued):
         theme.apply(plt.gcf().axes[3])
         plt.savefig('Figure_3.eps', format='eps', dpi=1000)
         plt.show()
-    
-    
+
+
     #FIGURE 32
     with plt.rc_context():
         plt.rcParams.update(theme.rcParams)
-    
+
         fig, axes, = plt.subplots(1,2,squeeze=True)
         theme.setup_figure(fig)
         t = sim.trange()
         plt.subplots_adjust(wspace=0.1, hspace=0.05)
-   
+
         plot_mc=axes[0]
         plot_mc.set_title("Cued Module")
         plot_mc.plot(sim.trange(),(mem_cued));
@@ -459,15 +459,15 @@ def plot_sim_1(sp_c,sp_u,res_c,res_u,cal_c,cal_u, mem_cued, mem_uncued):
         theme.apply(plt.gcf().axes[0])
         theme.apply(plt.gcf().axes[1])
         plt.savefig('Figure_4.eps', format='eps', dpi=1000)
-        plt.show()    
-    
-    
-    
+        plt.show()
+
+
+
 
 #SIMULATION
 #note that this is split for running a single trial in the nengo gui, and a full simulation
 
-        
+
 #normalise stimuli to be between 0 and 180 degrees orientation
 def norm_p(p):
     if p<0:
@@ -476,7 +476,7 @@ def norm_p(p):
         return p-180
     else:
         return p
-        
+
 #Calculate normalised cosine similarity and avoid divide by 0 errors
 def cosine_sim(a,b):
     out=np.zeros(a.shape[0])
@@ -484,46 +484,46 @@ def cosine_sim(a,b):
         if abs(np.linalg.norm(a[i])) > 0.05:
             out[i]=np.dot(a[i], b)/(np.linalg.norm(a[i])*np.linalg.norm(b))
     return out
-                
-                
+
+
 
 if nengo_gui_on:
     generate_gabors() #generate gabors
     create_model(seed=0) #build model
 
     memory_item_cued = 0 + 90
-    probe_cued = 42 + 90 
+    probe_cued = 42 + 90
     memory_item_uncued = 0 + 90
     probe_uncued = 42 + 90
 
 
 else: #no gui
-    
+
     #path
     cur_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))+'/data/' #store output in data subfolder
-    
+
     #simulation 1: recreate fig 3 & 4, 100 trials for both cued and uncued with 0 and 42 degree memory items and probes
     if sim_to_run == 1:
-    
+
         print('Running simulation 1')
         print('')
-        
+
         load_gabors_svd = False #no need to randomize this
-        
+
         ntrials = 100
         store_representations = True
         store_decisions = False
         uncued = True
 
 
-        #store results        
+        #store results
         templates=np.array([90,93,97,102,108,115,123,132])
         mem_cued = np.zeros((3000,len(templates)+1)) #keep cosine sim for 9 items (templates + impulse)
         mem_uncued = np.zeros((3000,len(templates)+1))
-        
+
         #first, run 100 trials to get average cosine sim
         for run in range(ntrials):
-        
+
             print('Run ' + str(run+1))
 
             #stimuli
@@ -536,7 +536,7 @@ else: #no gui
             #create new gabor filters every 10 trials
             if run % 10 == 0:
                 generate_gabors()
-        
+
             create_model(seed=run)
             sim = StpOCLsimulator(network=model, seed=run, context=context,progress_bar=False)
 
@@ -547,7 +547,7 @@ else: #no gui
             #print(sim.data[model.p_mem_cued].shape)
             #calc cosine sim with templates
             temp_phase = list(templates + phase) + [1800]
-            
+
             for cnt, templ in enumerate(temp_phase):
                 mem_cued[:,cnt] += cosine_sim(sim.data[model.p_mem_cued][:,:,],compressed_im_cued[templ,:])
                 mem_uncued[:,cnt] += cosine_sim(sim.data[model.p_mem_uncued][:,:,],compressed_im_uncued[templ,:])
@@ -556,9 +556,9 @@ else: #no gui
             for probe2 in sim.model.probes:
                 del sim._probe_outputs[probe2][:]
             del sim.data
-            sim.data = nengo.simulator.ProbeDict(sim._probe_outputs) 
-            
-        
+            sim.data = nengo.simulator.ProbeDict(sim._probe_outputs)
+
+
         #average
         mem_cued /= ntrials
         mem_uncued /= ntrials
@@ -583,23 +583,23 @@ else: #no gui
 
         #plot
         plot_sim_1(sp_c,sp_u,res_c,res_u,cal_c,cal_u, mem_cued, mem_uncued)
-        
+
 
     #simulation 2: collect data for fig 5 & 6. 1344 trials for 30 subjects
     if sim_to_run == 2:
-    
+
         load_gabors_svd = False #set to false for real simulation
 
         n_subj = 30
         trials_per_subj = 1344
-        store_representations = False 
-        store_decisions = True 
+        store_representations = False
+        store_decisions = True
         uncued = False
 
         #np array to keep track of the input during the simulation runs
         initialangle_c = np.zeros(n_subj*trials_per_subj) #cued
         angle_index=0
-        
+
         #orientation differences between probe and memory item for each run
         probelist=[-42, -33, -25, -18, -12, -7, -3, 3, 7, 12, 18, 25, 33, 42]
 
@@ -613,13 +613,13 @@ else: #no gui
             sim = StpOCLsimulator(network=model, seed=subj, context=context,progress_bar=False)
 
             #trials come in sets of 14, which we call a run (all possible orientation differences between memory and probe),
-            runs = int(trials_per_subj / 14)   
+            runs = int(trials_per_subj / 14)
 
             for run in range(runs):
-     
+
                 #run a trial with each possible orientation difference
                 for cnt_in_run, anglediff in enumerate(probelist):
-  
+
                     print('Subject ' + str(subj+1) + '/' + str(n_subj) + '; Trial ' + str(run*14 + cnt_in_run + 1) + '/' + str(trials_per_subj))
 
                     #set probe and stim
@@ -631,23 +631,23 @@ else: #no gui
                     or_memory_item_cued=memory_item_cued #original
                     memory_item_cued=memory_item_cued+(180*randint(0, 9))
                     probe_cued=probe_cued+(180*randint(0, 9))
-            
+
                     #store orientation
                     initialangle_c[angle_index]=or_memory_item_cued
-              
+
                     #run simulation
                     sim.run(3)
-                
+
                     #store output
                     np.savetxt(cur_path+sim_no+"_Diff_Theta_%i_subj_%i_trial_%i.csv" % (anglediff, subj+1, run*14+cnt_in_run+1), sim.data[model.p_dec_cued][2500:2999,:], delimiter=",")
-            
+
                     #reset simulator, clean probes thoroughly
                     sim.reset()
                     for probe2 in sim.model.probes:
                         del sim._probe_outputs[probe2][:]
                     del sim.data
-                    sim.data = nengo.simulator.ProbeDict(sim._probe_outputs) 
-            
+                    sim.data = nengo.simulator.ProbeDict(sim._probe_outputs)
+
                     angle_index=angle_index+1
-            
+
         np.savetxt(cur_path+sim_no+"_initial_angles_cued.csv", initialangle_c,delimiter=",")
